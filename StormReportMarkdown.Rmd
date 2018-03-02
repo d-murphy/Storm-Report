@@ -1,0 +1,81 @@
+---
+title: "March 2, 2018 Storm Report"
+date: "Report Date:  3/2/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source("PrepScript.r")
+
+```
+
+## Summary of Events
+
+```{r echo=FALSE, message=FALSE}
+
+p <- df %>% 
+  group_by(`Event Type`) %>%
+  summarise(Count = n()) %>% 
+  ggplot(aes(`Event Type`, Count, fill = factor(1),
+                    text = paste0("Event Type: ", `Event Type`) 
+                    )) + 
+  labs(x = "Event Type", y = "Count", fill = "") +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  scale_fill_pander() + 
+#  guides(fill = FALSE)
+  theme(legend.position = "none")
+  
+ggplotly(p, tooltip = c("Count","text"))
+
+
+```
+
+## Timeline of Events
+
+```{r echo=FALSE, message=FALSE}
+
+StartDate = mdy("03/02/2018")
+df$Date <- ymd(df$Date)
+
+df$HourIntoStorm <- df$Date - StartDate
+df$HourIntoStorm <- df$HourIntoStorm * 24 + hour(df$Time)
+
+p <- df %>% 
+  ggplot(aes(HourIntoStorm, 
+             text = paste0("</br>Date: ", Date,
+                           "</br>Time: ", hour(Time),"00 hours",
+                           "</br>Event Type: ", `Event Type`,
+                           "</br>SIMS #: ", SimsID)))  +
+  geom_rect(ymin = -Inf, ymax = Inf, 
+              xmin = 24, xmax = 48, fill = 'light grey') +
+  geom_bar(width = .8) +
+  scale_y_continuous(limits = c(0,1), breaks = c()) +
+  scale_x_continuous(limits = c(0,72), 
+                     breaks = c(12,36,60), 
+                     labels = c("Day 1", "Day 2", "Day 3")) + 
+  labs(y = "", x = "") +
+  theme_classic() +
+  scale_fill_pander() 
+
+ggplotly(p, tooltip = c("text"))
+
+
+```
+
+
+
+## Map of Events
+
+```{r echo=FALSE}
+
+leaflet(data = df) %>% addProviderTiles(providers$OpenStreetMap) %>%
+   addMarkers(~Long, ~Lat,popup = ~as.character(paste0("SIMS #: ",SimsID, 
+                                                       "</br>Event Type: ", `Event Type`,
+                                                       "</br>Date: ", Date,
+                                                       "</br>Time: ", hour(Time),"00 hours")))
+
+```
+
